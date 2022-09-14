@@ -1,3 +1,7 @@
+# Manager简介
+使用SpringCloud(2.2.7)+SpringBoot(2.7.3)+mysql等组件构建的一套微服务后端API系统
+
+
 # Manager模块说明
 
 ## build 部署模块
@@ -27,20 +31,6 @@ check_start.sh  辅助脚本，检查nacos是否可用
 ## docs 文档模块
 manager.sql     DDL
 RestApi.html    Rest API documentation
-
-
-
-
-### aop         切面模块，执行切面方法
-### common      公共模块，提供全局异常处理、统一返回类型控制等
-### config      配置模块，提供项目运行组件必须的配置Bean
-### controller  控制器模块，控制器方法
-### exception   异常模块，自定义异常
-### mapper      mybatis-plus的mapper模块
-### model       模型模块，有实体对象，VO，BO等
-### service     服务模块，主要处理业务逻辑
-### soa         soa模块，提供其他服务的RPC调用抽象本地化 
-### utils       工具类模块     
 
 
 ## src  java源码模块
