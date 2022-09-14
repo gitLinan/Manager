@@ -1,0 +1,36 @@
+spring:
+  profiles: docker
+  redis:
+    database: ${REDIS_DATABASE}
+    host: ${REDIS_HOST}
+    port: ${REDIS_PORT}
+    password: ${REDIS_PASSWORD}
+  datasource:
+      url: jdbc:mysql://${MYSQL_HOST}:${MYSQL_PORT}/${MYSQL_DATABASE}?useUnicode=true&characterEncoding=UTF-8&useSSL=false&serverTimezone=Asia/Shanghai&allowMultiQueries=true
+      username: ${MYSQL_USERNAME}
+      password: ${MYSQL_PASSWORD}
+  cloud:
+    nacos:
+      server-addr: ${NACOS_ADDR}
+      username: ${NACOS_USERNAME}
+      password: ${NACOS_PASSSWORD}
+      discovery:
+        namespace: ${NACOS_NAMESPACE:MANAGER}
+  mail:
+    host: ${MAIL_HOST}
+    port: ${MAIL_PORT}
+    username: ${MAIL_USERNAME}
+    password: ${MAIL_PASSWORD}
+
+
+logging:
+  file:
+    path: /opt/manager/logs
+  config: classpath:logback-docker.xml
+  level:
+    org.apache.redis: ${KAFKA_LEVEL:INFO}
+    org.apache.mysql: ${ZOOKEEPER_LEVEL:WARN}
+
+mail:
+  address: xxx@sad.com
+  receiver: xxx@sad.com

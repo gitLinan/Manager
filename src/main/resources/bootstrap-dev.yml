@@ -1,0 +1,30 @@
+spring:
+  profiles: dev
+  redis:
+    database: 52
+    host: local.cluster.redis
+    port: 6379
+    jedis:
+      pool:
+        max-active: 10
+        max-wait: -1
+        max-idle: 5
+        min-idle: 0
+    timeout: 20000
+    password: saas@manager@123456
+  datasource:
+    url: jdbc:mysql://local.cluster.mysql:3306/manager?useUnicode=true&&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai&allowMultiQueries=true
+    username: saas
+    password: manager@123456
+  cloud:
+    nacos:
+      server-addr: local.cluster.nacos:18849
+      username: nacos
+      password: nacos
+
+logging:
+  level:
+    com.mlamp.eip: DEBUG
+    org.apache.kafka: DEBUG
+server:
+  port: 8080

@@ -1,0 +1,27 @@
+spring:
+  profiles:
+    active: dev
+  application:
+    name: manager
+  cloud:
+    sentinel:
+      eager: true
+    nacos:
+      discovery:
+        group: manager
+feign:
+  client:
+    config:
+      default:
+        connect-timeout: 600000
+        read-timeout: 500000
+  compression:
+    request:
+      enabled: false
+      mime-types: text/xml,application/xml,application/json
+    response:
+      enabled: false
+  httpclient:
+    enabled: true
+    max-connections: 1000
+    max-connections-per-route: 200
