@@ -1,0 +1,122 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: meta-manager
+  namespace: manager
+data:
+  REDIS_DATABASE: 0
+  REDIS_HOST: 192.168.1.101
+  REDIS_PORT: 6379
+  MYSQL_HOST: 192.168.1.101
+  MYSQL_PORT: 3306
+  MYSQL_DATABASE: manager
+  MYSQL_USERNAME: root
+  MYSQL_PASSWORD: 123456
+  NACOS_ADDR: nacos:8848
+  NACOS_USERNAME: nacos
+  NACOS_PASSSWORD: nacos
+  JAVA_OPTS: -server -XX:+UseContainerSupport -XX:InitialRAMPercentage=80.0 -XX:MaxRAMPercentage=80.0
+  SPRING_APPLICATION_JSON: {"spring.cloud.inetutils.use-only-site-local-interfaces":true,"spring.cloud.inetutils.preferred-networks":["10.0"],"spring.cloud.inetutils.ignored-interfaces":["eth1","eth2"]}
+  NACOS_NAMESPACE: manager
+  MAIL_HOST: "192.168.2.1"
+  MAIL_PORT: "465"
+  MAIL_USERNAME: "test"
+  MAIL_PASSWORD: "test"
+  SW_AGENT_NAMESPACE: oneschema
+  JAVA_TOOL_OPTIONS: "-javaagent:/skywalking/agent/skywalking-agent.jar"
+  SW_AGENT_NAME: darwindb-di-data-dm
+  SW_AGENT_COLLECTOR_BACKEND_SERVICES: "pl.ap-shanghai.apm.tencentcs.com:11800"
+  SW_AGENT_AUTHENTICATION: gEKfbxhXbOHBjiEYLXZq
+---
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/path: "/actuator/prometheus"
+    prometheus.io/port: "8080"
+  name: manager-svc
+  namespace: oneschema
+  labels:
+    app: manager-svc
+spec:
+  type: ClusterIP
+  clusterIP: None
+  ports:
+    - protocol: TCP
+      port: 8080
+      name: manager-http-port
+      targetPort: 8080
+  selector:
+    app: manager-dm
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: manager-dm
+  namespace: oneschema
+  labels:
+    app: manager-dm
+spec:
+  replicas: 8
+  selector:
+    matchLabels:
+      app: manager-dm
+  template:
+    metadata:
+      labels:
+        app: manager-dm
+    spec:
+      initContainers:
+        - args: [ "-c", "cp -R /skywalking/agent /agent/" ]
+          command: [ "/bin/sh" ]
+          name: skywalking-agent
+          image: xxx.com/sw-java-agent-sidecar:8.8.0-alpine
+          volumeMounts:
+            - name: skywalking-agent
+              mountPath: /agent
+      imagePullSecrets:
+        - name: ma-secret
+      containers:
+        - image: xxx.com/manager-1.0.0:release
+          imagePullPolicy: Always
+          envFrom:
+            - configMapRef:
+                name: manager-cm
+          name: manager-dm
+          ports:
+            - containerPort: 8080
+              protocol: TCP
+          resources:
+            requests:
+              cpu: 4
+              memory: 11Gi
+            limits:
+              cpu: 4
+              memory: 11Gi
+          livenessProbe:
+            tcpSocket:
+              port: 8080
+            initialDelaySeconds: 120
+            periodSeconds: 10
+            timeoutSeconds: 150
+          readinessProbe:
+            httpGet:
+              path: /actuator
+              port: 8080
+              scheme: HTTP
+            initialDelaySeconds: 120
+            periodSeconds: 10
+            timeoutSeconds: 150
+          volumeMounts:
+            - name: pvc-shared
+              mountPath: /opt/manager/logs
+              subPath: files
+            - name: skywalking-agent
+              mountPath: /skywalking
+      volumes:
+        - name: pvc-shared
+          persistentVolumeClaim:
+            claimName: manager-shared-pvc
+        - name: skywalking-agent
+          emptyDir: {}

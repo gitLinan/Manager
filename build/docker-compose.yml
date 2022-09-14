@@ -1,0 +1,95 @@
+version: "3.7"
+
+services:
+  nacos:
+    image: nacos-server:1.3.2
+    environment:
+      - MODE=standalone
+      - SPRING_DATASOURCE_PLATFORM=mysql
+      - MYSQL_SERVICE_HOST=192.168.1.101
+      - JVM_XMS=512M
+      - JVM_XMX=512M
+      - JVM_XMN=256M
+      - MYSQL_SERVICE_DB_NAME=nacos
+      - MYSQL_SERVICE_PORT=3306
+      - MYSQL_SERVICE_USER=root
+      - MYSQL_SERVICE_PASSWORD=123456
+      - nacos.inetutils.use-only-site-local-interfaces=true
+      - nacos.inetutils.ignored-interfaces[0]=eth1
+      - nacos.inetutils.ignored-interfaces[1]=eth2
+      - nacos.inetutils.preferred-networks[0]=10.0
+    ports:
+      - "18848:8848"
+      - "19555:9555"
+    networks:
+      - manager
+    deploy:
+      placement:
+        constraints: [ node.role == manager ]
+      restart_policy:
+        condition: on-failure
+        max_attempts: 3
+  manager:
+    image: xxx.com/manager-v1.1:beta
+    hostname: manager
+    environment:
+      - REDIS_DATABASE=0
+      - REDIS_HOST=192.168.1.101
+      - REDIS_PORT=6379
+      - MYSQL_HOST=192.168.1.101
+      - MYSQL_PORT=3306
+      - MYSQL_DATABASE=manager
+      - MYSQL_USERNAME=root
+      - MYSQL_PASSWORD=123456
+      - NACOS_ADDR=nacos:8848
+      - NACOS_USERNAME=nacos
+      - NACOS_PASSSWORD=nacos
+      - JAVA_OPTS=-server -XX:+UseContainerSupport -XX:InitialRAMPercentage=80.0 -XX:MaxRAMPercentage=80.0
+      - SPRING_APPLICATION_JSON={"spring.cloud.inetutils.use-only-site-local-interfaces":true,"spring.cloud.inetutils.preferred-networks":["10.0"],"spring.cloud.inetutils.ignored-interfaces":["eth1","eth2"]}
+      - NACOS_NAMESPACE=manager
+      - MAIL_HOST="192.168.2.1"
+      - MAIL_PORT="465"
+      - MAIL_USERNAME="test"
+      - MAIL_PASSWORD="test"
+    networks:
+      - manager
+    cap_add:
+      - SYS_PTRACE
+    volumes:
+      - log:/opt/manager/logs
+    logging:
+      driver: fluentd
+      options:
+        fluentd-address: "192.168.1.101:24224"
+        fluentd-retry-wait: '1s'
+        fluentd-max-retries: '10'
+        tag: di.job
+    extra_hosts:
+      - "xxx.cn:192.168.1.101"
+    deploy:
+      placement:
+        constraints: [ node.role == worker ]
+      restart_policy:
+        condition: on-failure
+        max_attempts: 300
+      mode: replicated
+      replicas: 2
+      resources:
+        limits:
+          cpus: '0.80'
+          memory: 4096M
+        reservations:
+          cpus: '0.20'
+          memory: 1024M
+
+volumes:
+  log:
+    driver: local
+    driver_opts:
+      type: "nfs"
+      o: "addr=192.168.1.101,rw,nfsvers=4.1"
+      device: ":/data/logs"
+
+networks:
+  manager:
+    driver: overlay
